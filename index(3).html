@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>KPI Dashboard</title>
+  <meta name="description" content="KPI Dashboard Site" />
+  <meta name="theme-color" content="#0f172a" />
+
+  <style>
+    :root {
+      --bg: #0f172a;
+      --panel: #111827;
+      --text: #f8fafc;
+      --muted: #94a3b8;
+      --accent: #22c55e;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      background: var(--bg);
+      overflow: hidden;
+    }
+
+    #appFrame {
+      width: 100%;
+      height: 100vh;
+      border: 0;
+      display: none;
+      background: #fff;
+    }
+
+    #loading {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 16px;
+      background: radial-gradient(circle at top, #1e293b 0%, var(--bg) 55%);
+      color: var(--text);
+      z-index: 10;
+      text-align: center;
+      padding: 24px;
+    }
+
+    .logo {
+      width: 66px;
+      height: 66px;
+      display: grid;
+      place-items: center;
+      border-radius: 18px;
+      background: rgba(34, 197, 94, 0.14);
+      border: 1px solid rgba(34, 197, 94, 0.35);
+      font-size: 31px;
+    }
+
+    .title {
+      font-size: 22px;
+      font-weight: 700;
+      margin: 0;
+    }
+
+    .subtitle {
+      color: var(--muted);
+      font-size: 14px;
+      margin: 0;
+    }
+
+    .spinner {
+      width: 38px;
+      height: 38px;
+      border: 4px solid rgba(255, 255, 255, 0.15);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    #fallback {
+      display: none;
+      max-width: 520px;
+      padding: 20px;
+      border-radius: 14px;
+      background: var(--panel);
+      border: 1px solid rgba(255,255,255,.08);
+    }
+
+    #fallback p {
+      color: var(--muted);
+      line-height: 1.55;
+    }
+
+    .btn {
+      display: inline-block;
+      padding: 11px 18px;
+      border-radius: 10px;
+      background: var(--accent);
+      color: #052e16;
+      text-decoration: none;
+      font-weight: 700;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="loading">
+    <div class="logo">📊</div>
+    <h1 class="title" id="loadingTitle">KPI Dashboard</h1>
+    <p class="subtitle">Menghubungkan ke dashboard...</p>
+    <div class="spinner" id="spinner"></div>
+
+    <div id="fallback">
+      <strong>Dashboard tidak dapat ditampilkan di dalam halaman.</strong>
+      <p>
+        Klik tombol di bawah untuk membuka dashboard Google Apps Script
+        secara langsung.
+      </p>
+      <a id="openDirect" class="btn" href="#" target="_blank" rel="noopener">
+        Buka Dashboard
+      </a>
+    </div>
+  </div>
+
+  <iframe
+    id="appFrame"
+    title="KPI Dashboard"
+    allow="clipboard-read; clipboard-write; fullscreen"
+    referrerpolicy="strict-origin-when-cross-origin">
+  </iframe>
+
+  <script>
+    /* =========================================================
+       KONFIGURASI - UBAH BAGIAN INI SAJA
+       ========================================================= */
+    const CONFIG = {
+      // Paste URL deployment Google Apps Script di sini.
+      // Contoh:
+      // https://script.google.com/macros/s/AKfycbxxxxxxxxxxxxxxxx/exec
+      APP_SCRIPT_URL: "https://script.google.com/macros/s/AKfycbxSFv7lSDQHoLr2HAv5HFZ_PBjWm9-h7tenrD4YvZkCqQ43uSfeFUXgy2HQvWAEzYi51Q/exec",
+
+      // Nama dashboard
+      APP_NAME: "KPI Dashboard Site",
+
+      // MODE:
+      // "iframe"   = URL GitHub tetap terlihat / lebih pendek.
+      // "redirect" = langsung pindah ke URL Apps Script.
+      MODE: "iframe",
+
+      // Jika iframe gagal loading, tampilkan tombol fallback setelah sekian ms.
+      FALLBACK_DELAY: 12000
+    };
+
+    document.title = CONFIG.APP_NAME;
+    document.getElementById("loadingTitle").textContent = CONFIG.APP_NAME;
+
+    const frame = document.getElementById("appFrame");
+    const loading = document.getElementById("loading");
+    const fallback = document.getElementById("fallback");
+    const spinner = document.getElementById("spinner");
+    const openDirect = document.getElementById("openDirect");
+
+    function validUrl(url) {
+      return /^https:\/\/script\.google\.com\/macros\/s\/.+\/exec(?:\?.*)?$/i.test(url);
+    }
+
+    if (!validUrl(CONFIG.APP_SCRIPT_URL)) {
+      spinner.style.display = "none";
+      fallback.style.display = "block";
+      fallback.querySelector("strong").textContent = "Link Google Apps Script belum diisi.";
+      fallback.querySelector("p").textContent =
+        "Buka file index.html dan ganti APP_SCRIPT_URL dengan URL deployment Web App Google Apps Script.";
+      openDirect.style.display = "none";
+    } else {
+      openDirect.href = CONFIG.APP_SCRIPT_URL;
+
+      if (CONFIG.MODE === "redirect") {
+        window.location.replace(CONFIG.APP_SCRIPT_URL);
+      } else {
+        frame.src = CONFIG.APP_SCRIPT_URL;
+
+        frame.addEventListener("load", () => {
+          frame.style.display = "block";
+          loading.style.display = "none";
+        });
+
+        setTimeout(() => {
+          if (loading.style.display !== "none") {
+            spinner.style.display = "none";
+            fallback.style.display = "block";
+          }
+        }, CONFIG.FALLBACK_DELAY);
+      }
+    }
+  </script>
+</body>
+</html>
